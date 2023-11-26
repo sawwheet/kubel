@@ -1082,8 +1082,10 @@ RESET is to be called if the search is nil after the first attempt."
     (unless (-contains? kubel--selected-items item)
       (progn
         (push item kubel--selected-items)
+        (setf (aref (tabulated-list-get-entry) 0)
+              (kubel--propertize-status item))
         (forward-line 1)
-        (kubel)))))
+        (tabulated-list-print t t)))))
 
 (defun kubel-unmark-item ()
   "Unmark the item under cursor."
@@ -1091,8 +1093,10 @@ RESET is to be called if the search is nil after the first attempt."
   (let ((item (kubel--get-resource-under-cursor)))
     (when (-contains? kubel--selected-items item)
       (progn
-        (setq kubel--selected-items (delete item kubel--selected-items))
-        (kubel)))))
+        (setf (aref (tabulated-list-get-entry) 0)
+              (substring-no-properties item))
+        (forward-line 1)
+        (tabulated-list-print t t)))))
 
 (defun kubel-mark-all ()
   "Mark all items."
@@ -1103,13 +1107,19 @@ RESET is to be called if the search is nil after the first attempt."
     (while (not (eobp))
       (push (kubel--get-resource-under-cursor) kubel--selected-items)
       (forward-line 1)))
-  (kubel))
+  (dolist (entry tabulated-list-entries)
+    (cl-destructuring-bind (id descs) entry
+      (setf (aref descs 0) (kubel--propertize-status (aref descs 0)))))
+  (tabulated-list-print t t))
 
 (defun kubel-unmark-all ()
   "Unmark all items."
   (interactive)
   (setq kubel--selected-items '())
-  (kubel))
+  (dolist (entry tabulated-list-entries)
+    (cl-destructuring-bind (id descs) entry
+      (setf (aref descs 0) (string-remove-prefix "*" (substring-no-properties (aref descs 0))))))
+  (tabulated-list-print t t))
 
 ;; popups
 
